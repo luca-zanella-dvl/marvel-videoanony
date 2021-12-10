@@ -33,8 +33,13 @@ $ pip install -r requirements.txt
 
 <details open>
 <summary>Pretrained Models</summary>
-
-Please download the pretrained models from [Google Drive](https://drive.google.com/drive/folders/1YfZ-WSh5W1fCnje4fMgaY9EsXH2xMNnP?usp=sharing) and
+   
+First, create the `weights` folder in the root project directory.
+   
+```bash
+$ mkdir weights
+```
+Then, please download the pretrained models from [Google Drive](https://drive.google.com/drive/folders/1YfZ-WSh5W1fCnje4fMgaY9EsXH2xMNnP?usp=sharing) and
 save them under the `weights` folder.
 
 </details>
