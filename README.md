@@ -1,8 +1,12 @@
 <div align="center">
 
+<p>
+   <img src="https://github.com/luca-zanella-dvl/marvel-video-anonymization/blob/master/images/anonymized.gif" width="850" />
+</p>
+   
 <br>
 <p>
-Our repo is used for face and license plate anonymization. We first use a fine-tuned yolov5 for face/license plate detection and then apply blurring to obfuscate the faces/license plates.
+Our repo is used for head and license plate anonymization. We first use a fine-tuned yolov5 for head/license plate detection and then apply blurring to obfuscate the heads/license plates.
 </p>
 
 </div>
