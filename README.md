@@ -60,6 +60,12 @@ $ python anonymize.py --weights weights/crowdhuman1280x_yolov5x6.pt --classes 0 
                                                                                                                         'https://youtu.be/Zgi9g1ksQHc'  # YouTube
                                                                                                                         'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
+   
+For example, run the command below to anonymize heads on a sample video from the MOT Challenge included in this repository.
+   
+```bash
+$ python anonymize.py --source data/videos/MOT17-03_first5s.mp4 --weights weights/crowdhuman1280x_yolov5x6.pt --classes 0 --imgsz 1280 --anonymize-heads
+```
 
 Run commands below to anonymize license plates.
    
