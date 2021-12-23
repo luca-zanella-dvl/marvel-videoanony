@@ -1,8 +1,12 @@
 <div align="center">
 
+<p>
+   <img src="https://github.com/luca-zanella-dvl/marvel-video-anonymization/blob/master/images/anonymized.gif" width="850" />
+</p>
+   
 <br>
 <p>
-Our repo is used for face and license plate anonymization. We first use a fine-tuned yolov5 for face/license plate detection and then apply blurring to obfuscate the faces/license plates.
+Our repo is used for head and license plate anonymization. We first use a fine-tuned yolov5 for head/license plate detection and then apply blurring to obfuscate the heads/license plates.
 </p>
 
 </div>
@@ -29,8 +33,13 @@ $ pip install -r requirements.txt
 
 <details open>
 <summary>Pretrained Models</summary>
-
-Please download the pretrained models from [Google Drive](https://drive.google.com/drive/folders/1YfZ-WSh5W1fCnje4fMgaY9EsXH2xMNnP?usp=sharing) and
+   
+First, create the `weights` folder in the root project directory.
+   
+```bash
+$ mkdir weights
+```
+Then, please download the pretrained models from [Google Drive](https://drive.google.com/drive/folders/1YfZ-WSh5W1fCnje4fMgaY9EsXH2xMNnP?usp=sharing) and
 save them under the `weights` folder.
 
 </details>
