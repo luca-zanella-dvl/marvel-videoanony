@@ -2,6 +2,7 @@
 """
 Experimental modules
 """
+
 import math
 
 import numpy as np
@@ -24,27 +25,6 @@ class CrossConv(nn.Module):
 
     def forward(self, x):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
-
-
-class Sum(nn.Module):
-    # Weighted sum of 2 or more layers https://arxiv.org/abs/1911.09070
-    def __init__(self, n, weight=False):  # n: number of inputs
-        super().__init__()
-        self.weight = weight  # apply weights boolean
-        self.iter = range(n - 1)  # iter object
-        if weight:
-            self.w = nn.Parameter(-torch.arange(1.0, n) / 2, requires_grad=True)  # layer weights
-
-    def forward(self, x):
-        y = x[0]  # no weight
-        if self.weight:
-            w = torch.sigmoid(self.w) * 2
-            for i in self.iter:
-                y = y + x[i + 1] * w[i]
-        else:
-            for i in self.iter:
-                y = y + x[i + 1]
-        return y
 
 
 class MixConv2d(nn.Module):
