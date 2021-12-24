@@ -70,13 +70,13 @@ $ python anonymize.py --source data/videos/MOT17-03_first5s.mp4 --weights weight
 Run commands below to anonymize license plates.
    
 ```bash
-$ python anonymize.py --weights weights/yolov5x6.pt --lpd-weights lpd_yolov5x.pt --classes 2 3 7 --imgsz 1280 --lpd-imgsz 640 --anonymize-lps --source 0  # webcam 
-                                                                                                                                                       img.jpg  # image
-                                                                                                                                                       vid.mp4  # video
-                                                                                                                                                       path/  # directory
-                                                                                                                                                       path/*.jpg  # glob
-                                                                                                                                                       'https://youtu.be/Zgi9g1ksQHc'  # YouTube                      
-                                                                                                                                                       'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+$ python anonymize.py --weights weights/yolov5x6.pt --lpd-weights weights/lpd_yolov5x.pt --classes 2 3 7 --imgsz 1280 --lpd-imgsz 640 --anonymize-lps --source 0  # webcam 
+                                                                                                                                                               img.jpg  # image
+                                                                                                                                                               vid.mp4  # video
+                                                                                                                                                               path/  # directory
+                                                                                                                                                               path/*.jpg  # glob
+                                                                                                                                                               'https://youtu.be/Zgi9g1ksQHc'  # YouTube                      
+                                                                                                                                                               'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
    
 </details>
