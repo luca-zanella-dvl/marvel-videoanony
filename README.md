@@ -49,34 +49,20 @@ save them under the `weights` folder.
    
 `anonymize.py` runs heads and license plates anonymization on a variety of sources, saving results to `runs/anonymize`.
   
-Run commands below to anonymize heads.
+Run commands below to anonymize heads and license plates.
    
 ```bash
-$ python anonymize.py --weights weights/crowdhuman1280x_yolov5x6.pt --classes 0 --imgsz 1280 --anonymize-heads --source 0  # webcam 
-                                                                                                                        img.jpg  # image
-                                                                                                                        vid.mp4  # video
-                                                                                                                        path/  # directory
-                                                                                                                        path/*.jpg  # glob
-                                                                                                                        'https://youtu.be/Zgi9g1ksQHc'  # YouTube
-                                                                                                                        'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+$ python anonymize.py --source 0  # webcam
+                               img.jpg  # image
+                               vid.mp4  # video
+                               path/  # directory
+                               path/*.jpg  # glob
 ```
    
-For example, run the command below to anonymize heads on a sample video from the MOT Challenge included in this repository.
+For example, run the command below to anonymize heads and license plates on a sample video from the MOT Challenge included in this repository.
    
 ```bash
-$ python anonymize.py --source data/videos/MOT17-03_first5s.mp4 --weights weights/crowdhuman1280x_yolov5x6.pt --classes 0 --imgsz 1280 --anonymize-heads
-```
-
-Run commands below to anonymize license plates.
-   
-```bash
-$ python anonymize.py --weights weights/yolov5x6.pt --lpd-weights weights/lpd_yolov5x.pt --classes 2 3 7 --imgsz 1280 --lpd-imgsz 640 --anonymize-lps --source 0  # webcam 
-                                                                                                                                                               img.jpg  # image
-                                                                                                                                                               vid.mp4  # video
-                                                                                                                                                               path/  # directory
-                                                                                                                                                               path/*.jpg  # glob
-                                                                                                                                                               'https://youtu.be/Zgi9g1ksQHc'  # YouTube                      
-                                                                                                                                                               'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
+$ python anonymize.py --source data/videos/MOT17-03_first5s.mp4
 ```
    
 </details>
