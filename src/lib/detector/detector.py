@@ -17,13 +17,14 @@ class Detector(object):
         self.model = load_model(self.model, model_path)
         self.model = self.model.to(device)
         self.model.eval()
+        self.model.float()
 
         self.stride = int(self.model.stride.max())
         self.imgsz = check_img_size(imgsz, s=self.stride)  # check image size
 
-    def pre_process(self, im0):
+    def pre_process(self, im0s):
         # Padded resize
-        im = letterbox(im0, self.imgsz, stride=self.stride)[0]
+        im = letterbox(im0s, self.imgsz, stride=self.stride)[0]
 
         # Convert
         im = im.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
@@ -41,13 +42,13 @@ class Detector(object):
         pred = non_max_suppression(pred, classes=classes)
         return pred
 
-    def process_im(self, im0, classes):
+    def process_im(self, im0s, classes):
         """
         Takes a single frame as input, and scores the frame using yolo5 model.
         :param frame: input frame in numpy/list/tuple format.
         :return: Labels and Coordinates of objects detected by model in the frame.
         """
-        im = self.pre_process(im0.copy())
+        im = self.pre_process(im0s)
 
         # Inference
         pred = self.model(im)[0]
@@ -57,6 +58,8 @@ class Detector(object):
 
         # Process predictions
         for i, det in enumerate(pred):  # per image
+            im0 = im0s.copy()
+                
             # gn = torch.tensor(im0_shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if len(det):
                 # Rescale boxes from img_size to im0 size

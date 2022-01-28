@@ -118,7 +118,6 @@ class opts(object):
         # IO
         self.parser.add_argument(
             "--source",
-            type=extant_file,
             required=True,
             help="file/dir/URL/glob",
         )

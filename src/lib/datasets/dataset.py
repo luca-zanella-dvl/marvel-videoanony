@@ -5,9 +5,13 @@ Dataloaders and dataset utils
 import glob
 import os
 from pathlib import Path
+from threading import Thread
+import time
 
 import cv2
 import numpy as np
+
+from lib.utils.general import clean_str
 
 # Parameters
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
@@ -84,6 +88,70 @@ class LoadImages:  # for inference
 
     def __len__(self):
         return self.nf  # number of files
+
+
+class LoadStreams:
+    # streamloader, i.e. `python anonymize.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
+    def __init__(self, sources='streams.txt'):
+        self.mode = 'stream'
+        
+        if os.path.isfile(sources):
+            with open(sources) as f:
+                sources = [x.strip() for x in f.read().strip().splitlines() if len(x.strip())]
+        else:
+            sources = [sources]
+
+        n = len(sources)
+        self.imgs, self.fps, self.frames, self.threads = [None] * n, [0] * n, [0] * n, [None] * n
+        self.sources = [clean_str(x) for x in sources]  # clean source names for later
+        for i, s in enumerate(sources):  # index, source
+            # Start thread to read frames from video stream
+            st = f'{i + 1}/{n}: {s}... '
+            s = eval(s) if s.isnumeric() else s  # i.e. s = '0' local webcam
+            cap = cv2.VideoCapture(s)
+            assert cap.isOpened(), f'{st}Failed to open {s}'
+            w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            self.fps[i] = max(cap.get(cv2.CAP_PROP_FPS) % 100, 0) or 30.0  # 30 FPS fallback
+            self.frames[i] = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)), 0) or float('inf')  # infinite stream fallback
+
+            _, self.imgs[i] = cap.read()  # guarantee first frame
+            self.threads[i] = Thread(target=self.update, args=([i, cap, s]), daemon=True)
+            self.threads[i].start()
+
+    def update(self, i, cap, stream):
+        # Read stream `i` frames in daemon thread
+        n, f, read = 0, self.frames[i], 1  # frame number, frame array, inference every 'read' frame
+        while cap.isOpened() and n < f:
+            n += 1
+            # _, self.imgs[index] = cap.read()
+            cap.grab()
+            if n % read == 0:
+                success, im = cap.retrieve()
+                if success:
+                    self.imgs[i] = im
+                else:
+                    print('WARNING: Video stream unresponsive, please check your IP camera connection.')
+                    self.imgs[i] = np.zeros_like(self.imgs[i])
+                    cap.open(stream)  # re-open stream if signal was lost
+            time.sleep(1 / self.fps[i])  # wait time
+
+    def __iter__(self):
+        self.count = -1
+        return self
+
+    def __next__(self):
+        self.count += 1
+        if not all(x.is_alive() for x in self.threads) or cv2.waitKey(1) == ord('q'):  # q to quit
+            cv2.destroyAllWindows()
+            raise StopIteration
+
+        img0 = self.imgs.copy()
+
+        return self.sources, img0, None, ''
+
+    def __len__(self):
+        return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
 
 def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
