@@ -37,7 +37,7 @@ class opts(object):
         self.parser.add_argument(
             "--head-model",
             type=extant_file,
-            default=get_project_root() / 'weights/crowdhuman1280x_yolov5x6.pt',
+            default=get_project_root() / 'weights/crowdhuman1280x_yolov5x6-xs.pt',
             help="head detection model.pt path",
         )
         self.parser.add_argument(
@@ -82,7 +82,7 @@ class opts(object):
         self.parser.add_argument(
             "--lpd-model",
             type=extant_file,
-            default=get_project_root() / 'weights/lpd_yolov5x.pt',
+            default=get_project_root() / 'weights/grn_ft_lpd_yolov5x.pt',
             help="license plate detection model.pt path",
         )
         self.parser.add_argument(
