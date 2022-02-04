@@ -52,17 +52,18 @@ save them under the `weights` folder.
 Run commands below to anonymize heads and license plates.
    
 ```bash
-$ python anonymize.py --source 0  # webcam
-                               img.jpg  # image
-                               vid.mp4  # video
-                               path/  # directory
-                               path/*.jpg  # glob
+$ python src/anonymize.py --source 0  # webcam
+                                   img.jpg  # image
+                                   vid.mp4  # video
+                                   path/  # directory
+                                   path/*.jpg  # glob
+                                   'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP stream
 ```
    
 For example, run the command below to anonymize heads and license plates on a sample video from the MOT Challenge included in this repository.
    
 ```bash
-$ python anonymize.py --source data/videos/MOT17-03_first5s.mp4
+$ python src/anonymize.py --source data/videos/MOT17-03_first5s.mp4
 ```
    
 </details>
