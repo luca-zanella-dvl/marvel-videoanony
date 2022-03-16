@@ -37,7 +37,7 @@ class opts(object):
         self.parser.add_argument(
             "--head-model",
             type=extant_file,
-            default=get_project_root() / 'weights/crowdhuman1280x_yolov5x6-xs.pt',
+            default=get_project_root() / "weights/crowdhuman1280x_yolov5x6-xs.pt",
             help="head detection model.pt path",
         )
         self.parser.add_argument(
@@ -60,7 +60,7 @@ class opts(object):
         self.parser.add_argument(
             "--veh-model",
             type=extant_file,
-            default=get_project_root() / 'weights/yolov5x6.pt',
+            default=get_project_root() / "weights/yolov5x6.pt",
             help="vehicle detection model.pt path",
         )
         self.parser.add_argument(
@@ -78,11 +78,11 @@ class opts(object):
             type=int,
             help="filter by class: --classes 0, or --classes 0 2 3",
         )
-        
+
         self.parser.add_argument(
             "--lpd-model",
             type=extant_file,
-            default=get_project_root() / 'weights/grn_ft_lpd_yolov5x.pt',
+            default=get_project_root() / "weights/grn_yolov5x6.pt",
             help="license plate detection model.pt path",
         )
         self.parser.add_argument(
@@ -91,7 +91,7 @@ class opts(object):
             "--lpd-img-size",
             nargs="+",
             type=int,
-            default=[640],
+            default=[1280],
             help="inference size h,w",
         )
         self.parser.add_argument(
@@ -99,6 +99,12 @@ class opts(object):
             nargs="+",
             type=int,
             help="filter by class: --class 0, or --class 0 2 3",
+        )
+
+        self.parser.add_argument(
+            "--two-stage",
+            action="store_true",
+            help="2-stage license plate anonymization",
         )
 
         # system
@@ -134,6 +140,27 @@ class opts(object):
             action="store_true",
             help="existing project/name ok, do not increment",
         )
+
+        # # RTSP
+        # self.parser.add_argument(
+        #     "--device_id",
+        #     help="device id for the video device or video file location",
+        # )
+        # self.parser.add_argument(
+        #     "--fps", required=True, help="fps of the camera", type=int
+        # )
+        # self.parser.add_argument(
+        #     "--image_width", required=True, help="video frame width", type=int
+        # )
+        # self.parser.add_argument(
+        #     "--image_height", required=True, help="video frame height", type=int
+        # )
+        # self.parser.add_argument(
+        #     "--port", default=8554, help="port to stream video", type=int
+        # )
+        # self.parser.add_argument(
+        #     "--stream_uri", default="/video_stream", help="rtsp video stream uri"
+        # )
 
     def parse(self, args=""):
         if args == "":
