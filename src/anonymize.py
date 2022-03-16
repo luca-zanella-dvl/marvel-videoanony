@@ -19,25 +19,34 @@ from lib.opts import opts
 from lib.utils.torch_utils import select_device
 
 
-HEAD_LABEL = 'head'
-VEHICLES_LABELS = ['car', 'motorcycle', 'truck']
-LICENSE_PLATE_LABEL = 'license plate'
+HEAD_LABEL = "head"
+VEHICLES_LABELS = ["car", "motorcycle", "bus", "truck"]
+LICENSE_PLATE_LABEL = "license plate"
 
 
 @torch.no_grad()
 def main(opt):
     is_file = Path(opt.source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
-    is_url = opt.source.lower().startswith(('rtsp://', 'rtmp://', 'http://', 'https://'))
-    webcam = opt.source.isnumeric() or opt.source.endswith('.txt') or (is_url and not is_file)
+    is_url = opt.source.lower().startswith(
+        ("rtsp://", "rtmp://", "http://", "https://")
+    )
+    webcam = (
+        opt.source.isnumeric()
+        or opt.source.endswith(".txt")
+        or (is_url and not is_file)
+    )
 
     # Load models
     device = select_device(opt.device)
-    head_detector = Detector(opt, opt.head_model, opt.head_imgsz, device)
-    veh_detector = Detector(opt, opt.veh_model, opt.veh_imgsz, device)
-    lp_detector = Detector(opt, opt.lpd_model, opt.lpd_imgsz, device)
 
+    head_detector = Detector(opt, opt.head_model, opt.head_imgsz, device)
     head_classes = head_detector.model.names.index(HEAD_LABEL)
-    veh_classes = [veh_detector.model.names.index(veh) for veh in VEHICLES_LABELS]
+
+    if opt.two_stage:
+        veh_detector = Detector(opt, opt.veh_model, opt.veh_imgsz, device)
+        veh_classes = [veh_detector.model.names.index(veh) for veh in VEHICLES_LABELS]
+
+    lp_detector = Detector(opt, opt.lpd_model, opt.lpd_imgsz, device)
     lp_classes = lp_detector.model.names.index(LICENSE_PLATE_LABEL)
 
     # Dataloader
@@ -50,17 +59,36 @@ def main(opt):
         bs = 1  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
+    frame = 0
     with tqdm(total=len(dataset)) as pbar:
         # Run inference
         for path, im0s, vid_cap, s in dataset:
-
             for i in range(bs):
                 to_anonymize = []
 
                 if webcam:
-                    p, im0, = path[i], im0s[i].copy()
+                    p, im0, = (
+                        path[i],
+                        im0s[i].copy(),
+                    )
                 else:
-                    p, im0, = path, im0s.copy()
+                    p, im0, = (
+                        path,
+                        im0s.copy(),
+                    )
+
+                ###
+                # frame += 1
+                # if dataset.mode == "video":         
+                #     read = 5  # inference every 'read' frame
+                #     if vid_cap:  # video
+                #         fps = vid_cap.get(cv2.CAP_PROP_FPS)
+                #     else:
+                #         fps = dataset.fps[i]
+                # if not (frame - 1) % read == 0:
+                #     print(frame)
+                #     continue
+                ###
 
                 pbar.set_description("Anonymizing %s" % p)
 
@@ -68,35 +96,86 @@ def main(opt):
                 p = Path(p)  # to Path
                 save_path = str(opt.save_dir / p.name)  # im.jpg
 
+                imc = im0.copy()
                 # Head detection
-                head_labels = head_detector.process_im(im0, head_classes)
+                head_labels = head_detector.process_im(imc, head_classes)
                 for head_label, *head_xyxy, head_conf in head_labels:
-                    head_bbox = torch.tensor(head_xyxy).view(1, 4).clone().view(-1).numpy().astype(np.int32)
-                    to_anonymize.append((head_bbox[1], head_bbox[3], head_bbox[0], head_bbox[2]))
+                    head_bbox = (
+                        torch.tensor(head_xyxy)
+                        .view(1, 4)
+                        .clone()
+                        .view(-1)
+                        .numpy()
+                        .astype(np.int32)
+                    )
+                    # miny, maxy, minx, maxx
+                    to_anonymize.append(
+                        (head_bbox[1], head_bbox[3], head_bbox[0], head_bbox[2])
+                    )
 
+                imc = im0.copy()
                 # Vehicle detection
-                veh_labels = veh_detector.process_im(im0, veh_classes)
-                for veh_label, *veh_xyxy, veh_conf in veh_labels:
-                    veh_bbox = torch.tensor(veh_xyxy).view(1, 4).clone().view(-1).numpy().astype(np.int32)
-                    veh_im0 = im0[veh_bbox[1] : veh_bbox[3], veh_bbox[0] : veh_bbox[2]]
+                if opt.two_stage:
+                    veh_labels = veh_detector.process_im(imc, veh_classes)
+                    for veh_label, *veh_xyxy, veh_conf in veh_labels:
+                        veh_bbox = (
+                            torch.tensor(veh_xyxy)
+                            .view(1, 4)
+                            .clone()
+                            .view(-1)
+                            .numpy()
+                            .astype(np.int32)
+                        )
+                        veh_im0 = im0[
+                            veh_bbox[1] : veh_bbox[3], veh_bbox[0] : veh_bbox[2]
+                        ]
+                        veh_imc = veh_im0.copy()
 
+                        # License plate detection
+                        lp_labels = lp_detector.process_im(veh_imc, lp_classes)
+                        for lp_label, *lp_xyxy, lp_conf in lp_labels:
+                            lp_bbox = (
+                                (torch.tensor(lp_xyxy).view(1, 4))
+                                .view(-1)
+                                .numpy()
+                                .astype(np.int32)
+                            )
+                            # miny, maxy, minx, maxx
+                            to_anonymize.append(
+                                (
+                                    veh_bbox[1] + lp_bbox[1],
+                                    veh_bbox[1] + lp_bbox[3],
+                                    veh_bbox[0] + lp_bbox[0],
+                                    veh_bbox[0] + lp_bbox[2],
+                                )
+                            )
+                else:
                     # License plate detection
-                    lp_labels = lp_detector.process_im(veh_im0, lp_classes)
+                    lp_labels = lp_detector.process_im(imc, lp_classes)
                     for lp_label, *lp_xyxy, lp_conf in lp_labels:
-                        lp_bbox = (torch.tensor(lp_xyxy).view(1, 4)).view(-1).numpy().astype(np.int32)
-                        to_anonymize.append((veh_bbox[1] + lp_bbox[1], veh_bbox[1] + lp_bbox[3], veh_bbox[0] + lp_bbox[0], veh_bbox[0] + lp_bbox[2]))
+                        lp_bbox = (
+                            (torch.tensor(lp_xyxy).view(1, 4))
+                            .view(-1)
+                            .numpy()
+                            .astype(np.int32)
+                        )
+                        # miny, maxy, minx, maxx
+                        to_anonymize.append(
+                            (lp_bbox[1], lp_bbox[3], lp_bbox[0], lp_bbox[2])
+                        )
 
                 for miny, maxy, minx, maxx in to_anonymize:
-                        sub_im = im0[miny : maxy, minx : maxx]
-                        sub_im = cv2.GaussianBlur(sub_im, (45, 45), 30)
-                        im0[
-                            miny : maxy,
-                            minx : maxx,
-                        ] = sub_im
+                    sub_im = im0[miny:(maxy+1), minx:(maxx+1)]
+                    sub_im = cv2.GaussianBlur(sub_im, (45, 45), 30)
+                    im0[
+                        miny:(maxy+1),
+                        minx:(maxx+1),
+                    ] = sub_im
 
-                im0 = np.asarray(im0)
+                # im0 = np.asarray(im0)
+
                 # Save results (anonymised image)
-                if dataset.mode == 'image':
+                if dataset.mode == "image":
                     cv2.imwrite(save_path, im0)
                 else:  # 'video' or 'stream'
                     if vid_path[i] != save_path:  # new video
@@ -109,12 +188,28 @@ def main(opt):
                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         else:  # stream
                             fps, w, h = dataset.fps[i], im0.shape[1], im0.shape[0]
-                            save_path += '.mp4'
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                            save_path += ".mp4"
+                        vid_writer[i] = cv2.VideoWriter(
+                            save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
+                        )
+                        # vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(), cv2.CAP_GSTREAMER, 0, fps / read, (w, h), True)
+                        # vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(), cv2.CAP_GSTREAMER, 0, fps, (width, height), True)
+                    # if not vid_writer[i].isOpened():
+                    #     raise Exception("can't open video writer")
                     vid_writer[i].write(im0)
+                    # print("frame written to the server")
+                    # sleep(1 / fps)
 
                 pbar.update(1)
 
+
+def gstreamer_pipeline_out():
+    return (
+        'appsrc ! videoconvert' + \
+        ' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
+        ' ! rtspclientsink protocols=tcp location=rtsp://192.168.80.4:8554/mystream'
+    )
+        
 
 if __name__ == "__main__":
     opt = opts().init()
