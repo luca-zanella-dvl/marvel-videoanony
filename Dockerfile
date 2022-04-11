@@ -81,22 +81,46 @@ RUN groupadd --gid $USER_GROUP_ID $USER \
 
 # Install linux packages
 RUN apt-get update && apt-get upgrade -y
-# RUN \
-#     DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev libglib2.0-0
+RUN \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev libglib2.0-0
 
 # Install python dependencies
 COPY requirements.txt .
 RUN python -m pip install --upgrade pip
-RUN pip install --no-cache torch==1.10.2+cu113 torchvision==0.11.3+cu113 torchaudio==0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
-RUN pip install --no-cache -r requirements.txt
-
-RUN apt-get install -y git
+RUN pip uninstall -y torch torchvision torchtext
+RUN pip install --no-cache -r requirements.txt \
+    torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 
 # Install base dependencies + gstreamer
-RUN pip uninstall -y opencv-python
+# RUN pip uninstall -y opencv-python
 RUN apt-get update
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install build-essential
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install pkg-config
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install ffmpeg
+
+RUN \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get -y install build-essential \
+    cmake \
+    pkg-config \
+    libgtk-3-dev \
+    libavcodec-dev \
+    libavformat-dev \ 
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    gfortran \
+    openexr \ 
+    libatlas-base-dev \
+    python3-dev \
+    python3-numpy \
+    libtbb2 \
+    libtbb-dev \
+    libdc1394-22-dev
+
 RUN \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y libgstreamer1.0-0 \
@@ -107,6 +131,12 @@ RUN \
     gstreamer1.0-libav \
     gstreamer1.0-doc \
     gstreamer1.0-tools \
+    gstreamer1.0-x \
+    gstreamer1.0-alsa \
+    gstreamer1.0-gl \
+    gstreamer1.0-gtk3 \
+    gstreamer1.0-qt5 \
+    gstreamer1.0-pulseaudio \
     gstreamer1.0-rtsp \
     libgstreamer1.0-dev \
     libgstreamer-plugins-base1.0-dev \
@@ -121,7 +151,7 @@ RUN git clone https://github.com/opencv/opencv.git
 WORKDIR /opencv
 RUN git checkout 4.5.4
 
-# Build OpenCV
+# # Build OpenCV
 RUN mkdir /opencv/build 
 WORKDIR /opencv/build
 RUN ln -s /opt/conda/lib/python3.8/site-packages/numpy/core/include/numpy /usr/include/numpy
@@ -134,6 +164,7 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D PYTHON3_EXECUTABLE=$(which python3) \
     -D PYTHON3_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())") \
     -D PYTHON3_PACKAGES_PATH=$(python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())") \
+    -D WITH_FFMPEG=ON \
     -D WITH_GSTREAMER=ON \
     -D BUILD_EXAMPLES=ON ..
 RUN make -j$(nproc)
@@ -153,3 +184,4 @@ USER $USER
 # COPY . /app
 
 # CMD ["sh", "init_script.sh"]
+
