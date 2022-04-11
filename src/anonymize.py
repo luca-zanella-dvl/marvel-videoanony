@@ -77,19 +77,6 @@ def main(opt):
                         im0s.copy(),
                     )
 
-                ###
-                # frame += 1
-                # if dataset.mode == "video":         
-                #     read = 5  # inference every 'read' frame
-                #     if vid_cap:  # video
-                #         fps = vid_cap.get(cv2.CAP_PROP_FPS)
-                #     else:
-                #         fps = dataset.fps[i]
-                # if not (frame - 1) % read == 0:
-                #     print(frame)
-                #     continue
-                ###
-
                 pbar.set_description("Anonymizing %s" % p)
 
                 # Inference
@@ -189,25 +176,34 @@ def main(opt):
                         else:  # stream
                             fps, w, h = dataset.fps[i], im0.shape[1], im0.shape[0]
                             save_path += ".mp4"
-                        vid_writer[i] = cv2.VideoWriter(
-                            save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
-                        )
-                        # vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(), cv2.CAP_GSTREAMER, 0, fps / read, (w, h), True)
-                        # vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(), cv2.CAP_GSTREAMER, 0, fps, (width, height), True)
-                    # if not vid_writer[i].isOpened():
-                    #     raise Exception("can't open video writer")
+                        # vid_writer[i] = cv2.VideoWriter(
+                        #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
+                        # )
+                        vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(), cv2.CAP_GSTREAMER, 0, fps, (w, h), True)
+                    if not vid_writer[i].isOpened():
+                        raise Exception("can't open video writer")
                     vid_writer[i].write(im0)
-                    # print("frame written to the server")
-                    # sleep(1 / fps)
+                    print("frame written to the server")
 
                 pbar.update(1)
 
 
 def gstreamer_pipeline_out():
+    # return (
+    #     'appsrc ! videoconvert' + \
+    #     ' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
+    #     ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
+    # )
+    # return (
+    #     'appsrc name=appsrc format=time is-live=true caps=video/x-raw,format=(string)BGR appsrc. ! videoconvert' + \
+    #     ' ! x264enc tune=zerolatency' + \
+    #     ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
+    # )
     return (
         'appsrc ! videoconvert' + \
+        ' ! queue'
         ' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
-        ' ! rtspclientsink protocols=tcp location=rtsp://192.168.80.4:8554/mystream'
+        ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
     )
         
 
