@@ -37,7 +37,7 @@ class opts(object):
         self.parser.add_argument(
             "--head-model",
             type=extant_file,
-            default=get_project_root() / "weights/crowdhuman1280x_yolov5x6-xs.pt",
+            default=get_project_root() / "weights/crowdhuman1280x_yolov5x6.pt",
             help="head detection model.pt path",
         )
         self.parser.add_argument(
@@ -48,12 +48,6 @@ class opts(object):
             type=int,
             default=[1280],
             help="inference size h,w",
-        )
-        self.parser.add_argument(
-            "--head-classes",
-            nargs="+",
-            type=int,
-            help="filter by class: --classes 0, or --classes 0 2 3",
         )
 
         # vehicle detection
@@ -93,12 +87,6 @@ class opts(object):
             type=int,
             default=[1280],
             help="inference size h,w",
-        )
-        self.parser.add_argument(
-            "--lpd-classes",
-            nargs="+",
-            type=int,
-            help="filter by class: --class 0, or --class 0 2 3",
         )
 
         self.parser.add_argument(
@@ -141,7 +129,7 @@ class opts(object):
             help="existing project/name ok, do not increment",
         )
 
-        # # RTSP
+        # RTSP
         # self.parser.add_argument(
         #     "--device_id",
         #     help="device id for the video device or video file location",
@@ -161,6 +149,10 @@ class opts(object):
         # self.parser.add_argument(
         #     "--stream_uri", default="/video_stream", help="rtsp video stream uri"
         # )
+        self.parser.add_argument(
+            "--stream-uri", default="rtsp://localhost:8554/mystream", help="rtsp video stream uri"
+        )
+    
 
     def parse(self, args=""):
         if args == "":

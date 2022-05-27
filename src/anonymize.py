@@ -179,7 +179,7 @@ def main(opt):
                         # vid_writer[i] = cv2.VideoWriter(
                         #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
                         # )
-                        vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(), cv2.CAP_GSTREAMER, 0, fps, (w, h), True)
+                        vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(opt.stream_uri), cv2.CAP_GSTREAMER, 0, fps, (w, h), True)
                     if not vid_writer[i].isOpened():
                         raise Exception("can't open video writer")
                     vid_writer[i].write(im0)
@@ -188,7 +188,7 @@ def main(opt):
                 pbar.update(1)
 
 
-def gstreamer_pipeline_out():
+def gstreamer_pipeline_out(stream_uri):
     # return (
     #     'appsrc ! videoconvert' + \
     #     ' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
@@ -200,10 +200,10 @@ def gstreamer_pipeline_out():
     #     ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
     # )
     return (
-        'appsrc ! videoconvert' + \
-        ' ! queue'
-        ' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
-        ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
+        f'appsrc ! videoconvert' + \
+        f' ! queue'
+        f' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
+        f' ! rtspclientsink protocols=tcp location={stream_uri}'
     )
         
 
