@@ -3,14 +3,14 @@ FROM ubuntu:20.04
 
 ARG OPENCV_VERSION=4.5.4
 
-ARG USER=standard
-ARG USER_ID=1000 # uid from the previus step
-ARG USER_GROUP=standard
-ARG USER_GROUP_ID=1000 # gid from the previus step
-ARG USER_HOME=/home/${USER}
-# create a user group and a user (this works only for debian based images)
-RUN groupadd --gid $USER_GROUP_ID $USER \
-    && useradd --uid $USER_ID --gid $USER_GROUP_ID -m $USER
+# ARG USER=standard
+# ARG USER_ID=1000 # uid from the previus step
+# ARG USER_GROUP=standard
+# ARG USER_GROUP_ID=1000 # gid from the previus step
+# ARG USER_HOME=/home/${USER}
+# # create a user group and a user (this works only for debian based images)
+# RUN groupadd --gid $USER_GROUP_ID $USER \
+#     && useradd --uid $USER_ID --gid $USER_GROUP_ID -m $USER
 
 # Install linux packages
 RUN apt-get update && apt-get upgrade -y
@@ -36,7 +36,7 @@ RUN pip install --no-cache -r requirements.txt albumentations \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Install base dependencies + gstreamer
-# RUN pip uninstall -y opencv-python
+RUN pip uninstall -y opencv-python opencv-python-headless
 RUN apt-get update
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install ffmpeg
