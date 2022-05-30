@@ -222,7 +222,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
 def load_yolo(weights, inplace=True):
     # Create model
-    ckpt = torch.load(weights)  # load checkpoint
+    ckpt = torch.load(weights, map_location=lambda storage, loc: storage)  # load checkpoint
     # cfg = ckpt['model'].yaml
     # ch = ckpt['model'].yaml.get('ch')
     # nc = ckpt['model'].yaml.get('nc')
