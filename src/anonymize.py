@@ -174,7 +174,8 @@ def main(opt):
                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         else:  # stream
-                            fps, w, h = dataset.fps[i], im0.shape[1], im0.shape[0]
+                            fps = opt.stream_fps if opt.stream_fps is not None else dataset.fps[i]
+                            w, h = im0.shape[1], im0.shape[0]
                             save_path += ".mp4"
                         # vid_writer[i] = cv2.VideoWriter(
                         #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)

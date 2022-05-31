@@ -152,6 +152,9 @@ class opts(object):
         self.parser.add_argument(
             "--stream-uri", default="rtsp://localhost:8554/mystream", help="rtsp video stream uri"
         )
+        self.parser.add_argument(
+            "--stream-fps", type=float, help="framerate of the created video stream"
+        )
     
 
     def parse(self, args=""):
