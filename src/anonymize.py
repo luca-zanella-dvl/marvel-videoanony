@@ -152,11 +152,11 @@ def main(opt):
                         )
 
                 for miny, maxy, minx, maxx in to_anonymize:
-                    sub_im = im0[miny:(maxy+1), minx:(maxx+1)]
+                    sub_im = im0[miny : (maxy + 1), minx : (maxx + 1)]
                     sub_im = cv2.GaussianBlur(sub_im, (45, 45), 30)
                     im0[
-                        miny:(maxy+1),
-                        minx:(maxx+1),
+                        miny : (maxy + 1),
+                        minx : (maxx + 1),
                     ] = sub_im
 
                 # im0 = np.asarray(im0)
@@ -174,13 +174,26 @@ def main(opt):
                             w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         else:  # stream
-                            fps = opt.stream_fps if opt.stream_fps is not None else dataset.fps[i]
+                            fps = (
+                                opt.stream_fps
+                                if opt.stream_fps is not None
+                                else dataset.fps[i]
+                            )
                             w, h = im0.shape[1], im0.shape[0]
                             save_path += ".mp4"
                         # vid_writer[i] = cv2.VideoWriter(
                         #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
                         # )
-                        vid_writer[i] = cv2.VideoWriter(gstreamer_pipeline_out(opt.stream_uri), cv2.CAP_GSTREAMER, 0, fps, (w, h), True)
+                        vid_writer[i] = cv2.VideoWriter(
+                            gstreamer_pipeline_out(
+                                opt.source, opt.vstream_uri, opt.astream_uri
+                            ),
+                            cv2.CAP_GSTREAMER,
+                            0,
+                            fps,
+                            (w, h),
+                            True,
+                        )
                     if not vid_writer[i].isOpened():
                         raise Exception("can't open video writer")
                     vid_writer[i].write(im0)
@@ -189,24 +202,36 @@ def main(opt):
                 pbar.update(1)
 
 
-def gstreamer_pipeline_out(stream_uri):
+def gstreamer_pipeline_out(source, vstream_uri, astream_uri=None):
     # return (
-    #     'appsrc ! videoconvert' + \
-    #     ' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
-    #     ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
+    #     f'appsrc ! videoconvert' + \
+    #     f' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
+    #     f' ! rtspclientsink protocols=tcp location={stream_uri}'
     # )
     # return (
     #     'appsrc name=appsrc format=time is-live=true caps=video/x-raw,format=(string)BGR appsrc. ! videoconvert' + \
     #     ' ! x264enc tune=zerolatency' + \
     #     ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
     # )
-    return (
-        f'appsrc ! videoconvert' + \
-        f' ! queue'
-        f' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
-        f' ! rtspclientsink protocols=tcp location={stream_uri}'
-    )
-        
+    if astream_uri is not None:
+        return (
+            f"appsrc"
+            + f" ! videoconvert"
+            + f" ! x264enc speed-preset=ultrafast tune=zerolatency"
+            + f" ! rtspclientsink protocols=tcp location={vstream_uri}"
+            + f"rtspsrc location={source}"
+            + f" ! rtpmp4gdepay ! aacparse"
+            + f" ! rtspclientsink protocols=tcp location={astream_uri}"
+        )
+    else:
+        return (
+            f"appsrc"
+            + f" ! videoconvert"
+            + f" ! x264enc speed-preset=ultrafast tune=zerolatency"
+            + f" ! rtspclientsink protocols=tcp location={vstream_uri}"
+        )
+    # gst-launch-1.0 rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k ! rtph264depay ! h264parse ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/VideoStream rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k ! rtpmp4gdepay ! aacparse ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/AudioStream
+
 
 if __name__ == "__main__":
     opt = opts().init()
