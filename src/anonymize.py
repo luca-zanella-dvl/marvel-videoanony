@@ -60,13 +60,14 @@ def main(opt):
         bs = 1  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
-    (
-        ffmpeg
-        .input(opt.source, stimeout="5")
-        .audio
-        .output(opt.astream_uri, rtsp_transport="tcp", f="rtsp", buffer_size="30")
-        .run_async(pipe_stdout=True)
-    )
+    if opt.astream_uri is not None:
+        (
+            ffmpeg
+            .input(opt.source, stimeout="5")
+            .audio
+            .output(opt.astream_uri, rtsp_transport="tcp", f="rtsp", buffer_size="30")
+            .run_async(pipe_stdout=True)
+        )
 
     frame = 0
     with tqdm(total=len(dataset)) as pbar:
