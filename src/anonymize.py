@@ -6,6 +6,7 @@ from pathlib import Path
 import _init_paths
 
 import cv2
+import ffmpeg
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -58,6 +59,14 @@ def main(opt):
         dataset = LoadImages(opt.source)
         bs = 1  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
+
+    (
+        ffmpeg
+        .input(opt.source, stimeout="5")
+        .audio
+        .output(opt.astream_uri, rtsp_transport="tcp", f="rtsp", buffer_size="30")
+        .run_async(pipe_stdout=True)
+    )
 
     frame = 0
     with tqdm(total=len(dataset)) as pbar:
@@ -185,9 +194,7 @@ def main(opt):
                         #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
                         # )
                         vid_writer[i] = cv2.VideoWriter(
-                            gstreamer_pipeline_out(
-                                opt.source, opt.vstream_uri, opt.astream_uri
-                            ),
+                            gstreamer_pipeline_out(opt.vstream_uri),
                             cv2.CAP_GSTREAMER,
                             0,
                             fps,
@@ -202,7 +209,7 @@ def main(opt):
                 pbar.update(1)
 
 
-def gstreamer_pipeline_out(source, vstream_uri, astream_uri=None):
+def gstreamer_pipeline_out(vstream_uri):
     # return (
     #     f'appsrc ! videoconvert' + \
     #     f' ! x264enc speed-preset=ultrafast tune=zerolatency' + \
@@ -213,23 +220,29 @@ def gstreamer_pipeline_out(source, vstream_uri, astream_uri=None):
     #     ' ! x264enc tune=zerolatency' + \
     #     ' ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/mystream'
     # )
-    if astream_uri is not None:
-        return (
-            f"appsrc"
-            + f" ! videoconvert"
-            + f" ! x264enc speed-preset=ultrafast tune=zerolatency"
-            + f" ! rtspclientsink protocols=tcp location={vstream_uri}"
-            + f"rtspsrc location={source}"
-            + f" ! rtpmp4gdepay ! aacparse"
-            + f" ! rtspclientsink protocols=tcp location={astream_uri}"
-        )
-    else:
-        return (
-            f"appsrc"
-            + f" ! videoconvert"
-            + f" ! x264enc speed-preset=ultrafast tune=zerolatency"
-            + f" ! rtspclientsink protocols=tcp location={vstream_uri}"
-        )
+    # if astream_uri is not None:
+    #     return (
+    #         f"appsrc"
+    #         + f" ! videoconvert"
+    #         + f" ! x264enc speed-preset=ultrafast tune=zerolatency"
+    #         + f" ! rtspclientsink protocols=tcp location={vstream_uri}"
+    #         + f" rtspsrc location={source}"
+    #         + f" ! rtpmp4gdepay ! aacparse"
+    #         + f" ! rtspclientsink protocols=tcp location={astream_uri}"
+    #     )
+    # else:
+    #     return (
+    #         f"appsrc"
+    #         + f" ! videoconvert"
+    #         + f" ! x264enc speed-preset=ultrafast tune=zerolatency"
+    #         + f" ! rtspclientsink protocols=tcp location={vstream_uri}"
+    #     )
+    return (
+        f"appsrc"
+        + f" ! videoconvert"
+        + f" ! x264enc speed-preset=ultrafast tune=zerolatency"
+        + f" ! rtspclientsink protocols=tcp location={vstream_uri}"
+    )
     # gst-launch-1.0 rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k ! rtph264depay ! h264parse ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/VideoStream rtspsrc location=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k ! rtpmp4gdepay ! aacparse ! rtspclientsink protocols=tcp location=rtsp://172.17.0.3:8554/AudioStream
 
 
