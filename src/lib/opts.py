@@ -150,13 +150,13 @@ class opts(object):
         #     "--stream_uri", default="/video_stream", help="rtsp video stream uri"
         # )
         self.parser.add_argument(
-            "--vstream-uri", default="rtsp://localhost:8554/VideoStream", help="rtsp video stream uri"
+            "--vstream-uri", 
+            required=True,
+            default="rtsp://localhost:8554/VideoStream", 
+            help="file/URL rtsp video stream"
         )
         self.parser.add_argument(
             "--stream-fps", type=float, help="framerate of the created video stream"
-        )
-        self.parser.add_argument(
-            "--astream-uri", help="rtsp audio stream uri"
         )
     
 

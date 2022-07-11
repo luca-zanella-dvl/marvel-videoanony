@@ -10,6 +10,7 @@ import time
 
 import cv2
 import numpy as np
+import base64
 
 from lib.utils.general import clean_str
 
@@ -92,18 +93,23 @@ class LoadImages:  # for inference
 
 class LoadStreams:
     # streamloader, i.e. `python anonymize.py --source 'rtsp://example.com/media.mp4'  # RTSP, RTMP, HTTP streams`
-    def __init__(self, sources='streams.txt'):
+    def __init__(self, sources='sources.txt', streams='streams.txt'):
         self.mode = 'stream'
         
         if os.path.isfile(sources):
             with open(sources) as f:
-                sources = [x.strip() for x in f.read().strip().splitlines() if len(x.strip())]
+                sources = [base64.b64decode(x).decode('utf-8').strip() for x in f.read().strip().splitlines() if len(x.strip())]
+            with open(streams) as f:
+                streams = [x.strip() for x in f.read().strip().splitlines() if len(x.strip())]
         else:
             sources = [sources]
+            streams = [streams]
 
         n = len(sources)
         self.imgs, self.fps, self.frames, self.threads = [None] * n, [0] * n, [0] * n, [None] * n
         self.sources = [clean_str(x) for x in sources]  # clean source names for later
+        # self.streams = [clean_str(x) for x in streams]
+        self.streams = streams
         for i, s in enumerate(sources):  # index, source
             # Start thread to read frames from video stream
             st = f'{i + 1}/{n}: {s}... '

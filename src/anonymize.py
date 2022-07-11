@@ -6,7 +6,6 @@ from pathlib import Path
 import _init_paths
 
 import cv2
-import ffmpeg
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -53,40 +52,25 @@ def main(opt):
     # Dataloader
     if webcam:
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(opt.source)
+        dataset = LoadStreams(opt.source, opt.vstream_uri)
         bs = len(dataset)
     else:
         dataset = LoadImages(opt.source)
         bs = 1  # batch_size
     vid_path, vid_writer = [None] * bs, [None] * bs
 
-    if opt.astream_uri is not None:
-        (
-            ffmpeg
-            .input(opt.source, stimeout="5")
-            .audio
-            .output(opt.astream_uri, rtsp_transport="tcp", f="rtsp", buffer_size="30")
-            .run_async(pipe_stdout=True)
-        )
-
     frame = 0
     with tqdm(total=len(dataset)) as pbar:
         # Run inference
         for path, im0s, vid_cap, s in dataset:
             for i in range(bs):
-                to_anonymize = []
+                anonybboxes = []
 
-                if webcam:
-                    p, im0, = (
-                        path[i],
-                        im0s[i].copy(),
-                    )
+                if webcam:  # batch_size >= 1
+                    p, im0 = path[i], im0s[i].copy()
                 else:
-                    p, im0, = (
-                        path,
-                        im0s.copy(),
-                    )
-
+                    p, im0 = path, im0s.copy()
+                
                 pbar.set_description("Anonymizing %s" % p)
 
                 # Inference
@@ -95,42 +79,70 @@ def main(opt):
 
                 imc = im0.copy()
                 # Head detection
-                head_labels = head_detector.process_im(imc, head_classes)
-                for head_label, *head_xyxy, head_conf in head_labels:
-                    head_bbox = (
-                        torch.tensor(head_xyxy)
-                        .view(1, 4)
-                        .clone()
-                        .view(-1)
-                        .numpy()
-                        .astype(np.int32)
-                    )
-                    # miny, maxy, minx, maxx
-                    to_anonymize.append(
-                        (head_bbox[1], head_bbox[3], head_bbox[0], head_bbox[2])
-                    )
-
-                imc = im0.copy()
-                # Vehicle detection
-                if opt.two_stage:
-                    veh_labels = veh_detector.process_im(imc, veh_classes)
-                    for veh_label, *veh_xyxy, veh_conf in veh_labels:
-                        veh_bbox = (
-                            torch.tensor(veh_xyxy)
+                head_pred = head_detector.process_im(imc, head_classes)
+                # Process predictions
+                det = head_pred[0]  # per image 
+                if len(det):
+                    for *head_xyxy, head_conf, head_cls in reversed(det):
+                        head_bbox = (
+                            torch.tensor(head_xyxy)
                             .view(1, 4)
                             .clone()
                             .view(-1)
                             .numpy()
                             .astype(np.int32)
                         )
-                        veh_im0 = im0[
-                            veh_bbox[1] : veh_bbox[3], veh_bbox[0] : veh_bbox[2]
-                        ]
-                        veh_imc = veh_im0.copy()
+                        # miny, maxy, minx, maxx
+                        anonybbox = (head_bbox[1], head_bbox[3], head_bbox[0], head_bbox[2])
+                        anonybboxes.append(anonybbox)
 
-                        # License plate detection
-                        lp_labels = lp_detector.process_im(veh_imc, lp_classes)
-                        for lp_label, *lp_xyxy, lp_conf in lp_labels:
+                imc = im0.copy()
+                # Vehicle detection
+                if opt.two_stage:
+                    veh_pred = veh_detector.process_im(imc, veh_classes)
+                    det = veh_pred[0]  # per image
+                    if len(det):
+                        for *veh_xyxy, veh_conf, veh_cls in reversed(det):
+                            veh_bbox = (
+                                torch.tensor(veh_xyxy)
+                                .view(1, 4)
+                                .clone()
+                                .view(-1)
+                                .numpy()
+                                .astype(np.int32)
+                            )
+                            veh_im0 = im0[
+                                veh_bbox[1] : veh_bbox[3], veh_bbox[0] : veh_bbox[2]
+                            ]
+                            veh_imc = veh_im0.copy()
+    
+                            # License plate detection
+                            lp_pred = lp_detector.process_im(veh_imc, lp_classes)
+                            det = lp_pred[0]  # per image
+                            if len(det):
+                                for *lp_xyxy, lp_conf, lp_cls in reversed(det):
+                                    lp_bbox = (
+                                        (torch.tensor(lp_xyxy).view(1, 4))
+                                        .view(-1)
+                                        .numpy()
+                                        .astype(np.int32)
+                                    )
+                                    # miny, maxy, minx, maxx
+                                    anonybbox = (
+                                        veh_bbox[1] + lp_bbox[1],
+                                        veh_bbox[1] + lp_bbox[3],
+                                        veh_bbox[0] + lp_bbox[0],
+                                        veh_bbox[0] + lp_bbox[2],
+                                    )
+                                    anonybboxes.append(anonybbox)
+
+                else:
+                    imc = im0.copy()
+                    # License plate detection
+                    lp_pred = lp_detector.process_im(imc, lp_classes)
+                    det = lp_pred[0]  # per image 
+                    if len(det):
+                        for *lp_xyxy, lp_conf, lp_cls in reversed(det):
                             lp_bbox = (
                                 (torch.tensor(lp_xyxy).view(1, 4))
                                 .view(-1)
@@ -138,38 +150,16 @@ def main(opt):
                                 .astype(np.int32)
                             )
                             # miny, maxy, minx, maxx
-                            to_anonymize.append(
-                                (
-                                    veh_bbox[1] + lp_bbox[1],
-                                    veh_bbox[1] + lp_bbox[3],
-                                    veh_bbox[0] + lp_bbox[0],
-                                    veh_bbox[0] + lp_bbox[2],
-                                )
-                            )
-                else:
-                    # License plate detection
-                    lp_labels = lp_detector.process_im(imc, lp_classes)
-                    for lp_label, *lp_xyxy, lp_conf in lp_labels:
-                        lp_bbox = (
-                            (torch.tensor(lp_xyxy).view(1, 4))
-                            .view(-1)
-                            .numpy()
-                            .astype(np.int32)
-                        )
-                        # miny, maxy, minx, maxx
-                        to_anonymize.append(
-                            (lp_bbox[1], lp_bbox[3], lp_bbox[0], lp_bbox[2])
-                        )
-
-                for miny, maxy, minx, maxx in to_anonymize:
+                            anonybbox = (lp_bbox[1], lp_bbox[3], lp_bbox[0], lp_bbox[2])
+                            anonybboxes.append(anonybbox)
+                                    
+                for miny, maxy, minx, maxx in anonybboxes:
                     sub_im = im0[miny : (maxy + 1), minx : (maxx + 1)]
                     sub_im = cv2.GaussianBlur(sub_im, (45, 45), 30)
                     im0[
                         miny : (maxy + 1),
                         minx : (maxx + 1),
                     ] = sub_im
-
-                # im0 = np.asarray(im0)
 
                 # Save results (anonymised image)
                 if dataset.mode == "image":
@@ -191,21 +181,21 @@ def main(opt):
                             )
                             w, h = im0.shape[1], im0.shape[0]
                             save_path += ".mp4"
-                        # vid_writer[i] = cv2.VideoWriter(
-                        #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
-                        # )
-                        vid_writer[i] = cv2.VideoWriter(
-                            gstreamer_pipeline_out(opt.vstream_uri),
-                            cv2.CAP_GSTREAMER,
-                            0,
-                            fps,
-                            (w, h),
-                            True,
-                        )
+                            # vid_writer[i] = cv2.VideoWriter(
+                            #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
+                            # )
+                            vid_writer[i] = cv2.VideoWriter(
+                                gstreamer_pipeline_out(dataset.streams[i]),
+                                cv2.CAP_GSTREAMER,
+                                0,
+                                fps,
+                                (w, h),
+                                True,
+                            )
                     if not vid_writer[i].isOpened():
                         raise Exception("can't open video writer")
                     vid_writer[i].write(im0)
-                    print("frame written to the server")
+                    # print("frame written to the server")
 
                 pbar.update(1)
 

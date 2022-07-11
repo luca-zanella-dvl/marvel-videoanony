@@ -42,34 +42,28 @@ class Detector(object):
         pred = non_max_suppression(pred, classes=classes)
         return pred
 
-    def process_im(self, im0s, classes):
+    def process_im(self, im0, classes):
         """
         Takes a single frame as input, and scores the frame using yolo5 model.
         :param frame: input frame in numpy/list/tuple format.
         :return: Labels and Coordinates of objects detected by model in the frame.
         """
-        im = self.pre_process(im0s)
+        im = self.pre_process(im0)
 
         # Inference
         pred = self.model(im)[0]
         pred = self.post_process(pred, classes)
 
-        results = []
+        # results = []
 
         # Process predictions
-        for i, det in enumerate(pred):  # per image
-            im0 = im0s.copy()
-                
+        for i, det in enumerate(pred):  # per image                
             # gn = torch.tensor(im0_shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if len(det):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(im.shape[2:], det[:, :4], im0.shape).round()
 
-                for *xyxy, conf, cls in reversed(det):
-                    # xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                    results.append((self.cls2label(cls), *xyxy, conf))  # label format
-
-        return results
+        return pred
 
     def cls2label(self, cls):
         """
@@ -81,6 +75,3 @@ class Detector(object):
         label = self.model.names[c]
         return label
 
-    def count_label(self, results, label):
-        n = len([cls == label for cls, xywh, conf in results])
-        return n
