@@ -153,8 +153,14 @@ def main(opt):
                             anonybbox = (lp_bbox[1], lp_bbox[3], lp_bbox[0], lp_bbox[2])
                             anonybboxes.append(anonybbox)
                                     
+                imc = im0.copy()
+                w, h = im0.shape[1], im0.shape[0]
                 for miny, maxy, minx, maxx in anonybboxes:
-                    sub_im = im0[miny : (maxy + 1), minx : (maxx + 1)]
+                    miny = max(0, min(miny, h-1))
+                    maxy = max(0, min(maxy, h-1))
+                    minx = max(0, min(minx, w-1))
+                    maxx = max(0, min(maxx, w-1))
+                    sub_im = imc[miny : (maxy + 1), minx : (maxx + 1)]
                     sub_im = cv2.GaussianBlur(sub_im, (45, 45), 30)
                     im0[
                         miny : (maxy + 1),
