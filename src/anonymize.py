@@ -70,7 +70,7 @@ def main(opt):
                     p, im0 = path[i], im0s[i].copy()
                 else:
                     p, im0 = path, im0s.copy()
-                
+
                 pbar.set_description("Anonymizing %s" % p)
 
                 # Inference
@@ -81,7 +81,7 @@ def main(opt):
                 # Head detection
                 head_pred = head_detector.process_im(imc, head_classes)
                 # Process predictions
-                det = head_pred[0]  # per image 
+                det = head_pred[0]  # per image
                 if len(det):
                     for *head_xyxy, head_conf, head_cls in reversed(det):
                         head_bbox = (
@@ -93,7 +93,12 @@ def main(opt):
                             .astype(np.int32)
                         )
                         # miny, maxy, minx, maxx
-                        anonybbox = (head_bbox[1], head_bbox[3], head_bbox[0], head_bbox[2])
+                        anonybbox = (
+                            head_bbox[1],
+                            head_bbox[3],
+                            head_bbox[0],
+                            head_bbox[2],
+                        )
                         anonybboxes.append(anonybbox)
 
                 imc = im0.copy()
@@ -115,7 +120,7 @@ def main(opt):
                                 veh_bbox[1] : veh_bbox[3], veh_bbox[0] : veh_bbox[2]
                             ]
                             veh_imc = veh_im0.copy()
-    
+
                             # License plate detection
                             lp_pred = lp_detector.process_im(veh_imc, lp_classes)
                             det = lp_pred[0]  # per image
@@ -140,7 +145,7 @@ def main(opt):
                     imc = im0.copy()
                     # License plate detection
                     lp_pred = lp_detector.process_im(imc, lp_classes)
-                    det = lp_pred[0]  # per image 
+                    det = lp_pred[0]  # per image
                     if len(det):
                         for *lp_xyxy, lp_conf, lp_cls in reversed(det):
                             lp_bbox = (
@@ -152,20 +157,21 @@ def main(opt):
                             # miny, maxy, minx, maxx
                             anonybbox = (lp_bbox[1], lp_bbox[3], lp_bbox[0], lp_bbox[2])
                             anonybboxes.append(anonybbox)
-                                    
+
                 imc = im0.copy()
                 w, h = im0.shape[1], im0.shape[0]
                 for miny, maxy, minx, maxx in anonybboxes:
-                    miny = max(0, min(miny, h-1))
-                    maxy = max(0, min(maxy, h-1))
-                    minx = max(0, min(minx, w-1))
-                    maxx = max(0, min(maxx, w-1))
-                    sub_im = imc[miny : (maxy + 1), minx : (maxx + 1)]
-                    sub_im = cv2.GaussianBlur(sub_im, (45, 45), 30)
-                    im0[
-                        miny : (maxy + 1),
-                        minx : (maxx + 1),
-                    ] = sub_im
+                    miny = max(0, min(miny, h - 1))
+                    maxy = max(0, min(maxy, h - 1))
+                    minx = max(0, min(minx, w - 1))
+                    maxx = max(0, min(maxx, w - 1))
+                    if maxy > miny and maxx > minx:
+                        sub_im = imc[miny : (maxy + 1), minx : (maxx + 1)]
+                        sub_im = cv2.GaussianBlur(sub_im, (45, 45), 30)
+                        im0[
+                            miny : (maxy + 1),
+                            minx : (maxx + 1),
+                        ] = sub_im
 
                 # Save results (anonymised image)
                 if dataset.mode == "image":
