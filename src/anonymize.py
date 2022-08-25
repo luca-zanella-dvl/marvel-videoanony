@@ -172,7 +172,7 @@ def main(opt):
                             miny : (maxy + 1),
                             minx : (maxx + 1),
                         ] = sub_im
-
+                
                 # Save results (anonymised image)
                 if dataset.mode == "image":
                     cv2.imwrite(save_path, im0)
@@ -192,18 +192,18 @@ def main(opt):
                                 else dataset.fps[i]
                             )
                             w, h = im0.shape[1], im0.shape[0]
-                            save_path += ".mp4"
-                            # vid_writer[i] = cv2.VideoWriter(
-                            #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
-                            # )
-                            vid_writer[i] = cv2.VideoWriter(
-                                gstreamer_pipeline_out(dataset.streams[i]),
-                                cv2.CAP_GSTREAMER,
-                                0,
-                                fps,
-                                (w, h),
-                                True,
-                            )
+                        save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
+                        # vid_writer[i] = cv2.VideoWriter(
+                        #     save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
+                        # )
+                        vid_writer[i] = cv2.VideoWriter(
+                            gstreamer_pipeline_out(dataset.streams[i]),
+                            cv2.CAP_GSTREAMER,
+                            0,
+                            fps,
+                            (w, h),
+                            True,
+                        )
                     if not vid_writer[i].isOpened():
                         raise Exception("can't open video writer")
                     vid_writer[i].write(im0)
