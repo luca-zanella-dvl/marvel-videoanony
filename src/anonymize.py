@@ -193,17 +193,20 @@ def main(opt):
                             )
                             w, h = im0.shape[1], im0.shape[0]
                         save_path = str(Path(save_path).with_suffix('.mp4'))  # force *.mp4 suffix on results videos
-                        vid_writer[i] = cv2.VideoWriter(
-                            save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
-                        )
-                        # vid_writer[i] = cv2.VideoWriter(
-                        #     gstreamer_pipeline_out(dataset.streams[i]),
-                        #     cv2.CAP_GSTREAMER,
-                        #     0,
-                        #     fps,
-                        #     (w, h),
-                        #     True,
-                        # )
+                        if opt.vstream_uri is not None:
+                            vid_writer[i] = cv2.VideoWriter(
+                                gstreamer_pipeline_out(dataset.streams[i]),
+                                cv2.CAP_GSTREAMER,
+                                0,
+                                fps,
+                                (w, h),
+                                True,
+                            )
+                        else:
+                            vid_writer[i] = cv2.VideoWriter(
+                                save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h)
+                            )
+                        
                     if not vid_writer[i].isOpened():
                         raise Exception("can't open video writer")
                     vid_writer[i].write(im0)
