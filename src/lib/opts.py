@@ -37,7 +37,7 @@ class opts(object):
         self.parser.add_argument(
             "--head-model",
             type=extant_file,
-            default=get_project_root() / "weights/crowdhuman1280x_yolov5x6.pt",
+            default=get_project_root() / "weights/crowdhuman1280x_yolov5l.pt",
             help="head detection model.pt path",
         )
         self.parser.add_argument(
@@ -76,7 +76,7 @@ class opts(object):
         self.parser.add_argument(
             "--lpd-model",
             type=extant_file,
-            default=get_project_root() / "weights/grn_yolov5x6.pt",
+            default=get_project_root() / "weights/grn1280x_yolov5l.pt",
             help="license plate detection model.pt path",
         )
         self.parser.add_argument(
@@ -151,8 +151,6 @@ class opts(object):
         # )
         self.parser.add_argument(
             "--vstream-uri", 
-            required=True,
-            default="rtsp://localhost:8554/VideoStream", 
             help="file/URL rtsp video stream"
         )
         self.parser.add_argument(
