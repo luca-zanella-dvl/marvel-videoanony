@@ -17,15 +17,15 @@ Our repo is used for head and license plate anonymization. We first use a fine-t
 <summary>Install</summary>
 
 [**Python>=3.6.0**](https://www.python.org/) is required with all
-[requirements.txt](https://github.com/luca-zanella-dvl/marvel-video-anonymization/blob/master/requirements.txt) installed including
+[requirements.txt](https://github.com/luca-zanella-dvl/marvel-video-anony/blob/master/requirements.txt) installed including
 [**PyTorch>=1.7**](https://pytorch.org/get-started/locally/):
 <!-- $ sudo apt update && apt install -y libgl1-mesa-glx libsm6 libxext6 libxrender-dev -->
 
 ```bash
-$ git clone https://github.com/luca-zanella-dvl/marvel-video-anonymization
-$ cd marvel-video-anonymization
-$ conda create --name marvel-video-anonymization python=3.9
-$ conda activate marvel-video-anonymization
+$ git clone https://github.com/luca-zanella-dvl/marvel-videoanony
+$ cd marvel-videoanony
+$ conda create --name marvel-videoanony python=3.9
+$ conda activate marvel-videoanony
 $ pip install -r requirements.txt
 ```
 
